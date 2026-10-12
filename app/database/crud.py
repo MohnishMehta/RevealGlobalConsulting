@@ -33,6 +33,8 @@ def save_trade_records(
         record = TradeRecord(
             hs_code=hs_code,
             country=supplier["country"],
+            cty_code=supplier["CTY_CODE"],
+            commodity=supplier["commodity"],
             year=year,
             month=month,
             value_usd=supplier["value_usd"],
@@ -46,6 +48,7 @@ def save_trade_records(
 
     return records
 
+
 def records_to_month_result(
     records: list[TradeRecord],
     year: int,
@@ -55,14 +58,29 @@ def records_to_month_result(
 
     for record in records:
         suppliers.append({
+            "CTY_CODE": record.cty_code,
             "country": record.country,
+            "commodity": record.commodity,
             "value_usd": record.value_usd,
+            "time": f"{year}-{month:02d}",
+            "hs_code": record.hs_code,
             "share_pct": record.share_pct
         })
 
-    total_imports = sum(record.value_usd for record in records)
+    total_imports = sum(
+        record.value_usd
+        for record in records
+    )
 
-    hhi = sum(record.share_pct ** 2 for record in records)
+    suppliers.sort(
+        key=lambda supplier: supplier["value_usd"],
+        reverse=True
+    )
+
+    hhi = sum(
+        ((record.value_usd / total_imports) * 100) ** 2
+        for record in records
+    )
 
     return {
         "year": year,
